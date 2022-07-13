@@ -27,6 +27,32 @@ private:
   RHS const& rhs;
 };
 
+// expression template version of multiplication for DualNum uses the type
+// DualNumProduct to represent the unevaluated multiplication.
+
+template <typename LHS, typename RHS>
+class DualNumProduct {
+public:
+  using value_type = typename LHS::value_type;
+
+  DualNumProduct(LHS const& lhs, RHS const& rhs) : lhs(lhs), rhs(rhs) {}
+
+  // conversion of i'th element to the resulting sum of the i'th elements
+  // of the represented expression.
+  value_type
+  operator()(std::size_t i) const
+  {
+    return i == 0 ? lhs(0) * rhs(0) : lhs(0) * rhs(1) + lhs(1) * rhs(0);
+  }
+
+private:
+  // We contain references to avoid copying. This is acceptible because the
+  // lifetime of an expression object is always, by construction, long enough to
+  // let it be evaluated.
+  LHS const& lhs;
+  RHS const& rhs;
+};
+
 struct DualNum {
   // We need a nested type value_type, so that DualNum can be used
   // withh the DualNumSum template.
@@ -86,6 +112,13 @@ operator+(LHS const& lhs, RHS const& rhs)
   return DualNumSum<LHS, RHS>(lhs, rhs);
 }
 
+template <typename LHS, typename RHS>
+DualNumProduct<LHS, RHS>
+operator*(LHS const& lhs, RHS const& rhs)
+{
+  return DualNumProduct<LHS, RHS>(lhs, rhs);
+}
+
 int
 main()
 {
@@ -94,6 +127,6 @@ main()
   printf("outputs:  %f   %f\n", y(0), y(1));
 
   DualNum z;
-  z = x0 + x1 + x2 + x3;
+  z = x0 * x1 * x2 * x3;
   printf("outputs:  %f   %f\n", z(0), z(1));
 }
