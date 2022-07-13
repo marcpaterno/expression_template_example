@@ -20,7 +20,7 @@ public:
   }
 
 private:
-  // We contain references to avoid copying. This is acceptible because the
+  // We contain references to avoid copying. This is acceptable because the
   // lifetime of an expression object is always, by construction, long enough to
   // let it be evaluated.
   LHS const& lhs;
@@ -46,7 +46,7 @@ public:
   }
 
 private:
-  // We contain references to avoid copying. This is acceptible because the
+  // We contain references to avoid copying. This is acceptable because the
   // lifetime of an expression object is always, by construction, long enough to
   // let it be evaluated.
   LHS const& lhs;
