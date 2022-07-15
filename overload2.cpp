@@ -1,5 +1,6 @@
 #include <array>
 #include <cstdio>
+#include <type_traits>
 
 // expression template version of addition for DualNum uses the type
 // DualNumSum to represent the unevaluated addition.
@@ -63,7 +64,9 @@ struct DualNum {
   std::array<value_type, 2> vals;
 
   // Serves as default constructor, as well as 1- and 2-arg constructors.
-  explicit DualNum(double real = 0.0, double dual = 0.0) : vals{real, dual} {}
+  DualNum() : vals{0.0, 0.0} {}
+  DualNum(double real) : vals{real, 0.0} {}
+  DualNum(double real, double dual) : vals{real, dual} {}
 
   // This constructor template is required to allow creating a DualNum from an
   // expression; operator= does not do this because it requires an
@@ -105,6 +108,45 @@ struct DualNum {
 
 // Adding two expressions does not force evaluation of the expressions. This is
 // the key element of the expression template abstraction.
+
+#if USE_CONSTEXPR
+// This is an attempt to reduce the amount of boilerplate needed for this
+// pattern. Unfortunately, the rules for the lifetimes of temporary objects
+// make an expression like:
+//      5. + x0 + x1
+// introduce undefined behavior. The result compiles but yields erroneous results.
+
+template <typename LHS, typename RHS>
+auto
+operator+(LHS const& lhs, RHS const& rhs)
+{
+  if constexpr (std::is_arithmetic_v<LHS>) {
+    return DualNumSum<DualNum, RHS>(DualNum(lhs), rhs);
+  } else if constexpr (std::is_arithmetic_v<RHS>) {
+    return DualNumSum<LHS, DualNum>(lhs, DualNum(rhs));
+  } else {
+    return DualNumSum<LHS, RHS>(lhs, rhs);
+  }
+  // No return because we're already done.
+}
+#endif
+
+#if 0
+template <typename RHS>
+DualNumSum<DualNum, RHS>
+operator+(double lhs,  RHS const& rhs)
+{
+  return DualNumSum<DualNum, RHS>(DualNum(lhs), rhs);
+}
+
+template <typename LHS>
+DualNumSum<LHS, DualNum>
+operator+(LHS const& lhs, double rhs)
+{
+  return DualNumSum<LHS, DualNum>(lhs, DualNum(rhs));
+}
+#endif
+
 template <typename LHS, typename RHS>
 DualNumSum<LHS, RHS>
 operator+(LHS const& lhs, RHS const& rhs)
@@ -123,7 +165,7 @@ int
 main()
 {
   DualNum x0(1.0, 0.5), x1(2.0, 1.5), x2(3.0, 2.5), x3(4.0, 3.5);
-  DualNum y = x0 + x1 + x2 + x3;
+  DualNum y = x0 + x1 + x2 + x3 + DualNum(5.0);
   printf("outputs:  %f   %f\n", y(0), y(1));
 
   DualNum z;
