@@ -108,13 +108,13 @@ struct DualNum {
 
 // We support the suffix _dn on a floating-point literal, or an integer literal,
 // to create a DualNum.
-inline
-DualNum operator "" _dn(long double x) {
+inline DualNum operator"" _dn(long double x)
+{
   return DualNum(static_cast<double>(x));
 }
 
-inline
-DualNum operator "" _dn(unsigned long long x) {
+inline DualNum operator"" _dn(unsigned long long x)
+{
   return DualNum(static_cast<double>(x));
 }
 
@@ -149,7 +149,7 @@ main()
   DualNum z2;
   z2 = 1.0_dn + x0 * x1 * x2 * x3;
   printf("outputs:  %f   %f\n", z2(0), z2(1));
-  
+
   DualNum z3;
   z3 = 1_dn + x0 * x1 * x2 * x3;
   printf("outputs:  %f   %f\n", z3(0), z3(1));
