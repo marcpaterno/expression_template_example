@@ -106,46 +106,20 @@ struct DualNum {
   }
 };
 
+// We support the suffix _dn on a floating-point literal, or an integer literal,
+// to create a DualNum.
+inline
+DualNum operator "" _dn(long double x) {
+  return DualNum(static_cast<double>(x));
+}
+
+inline
+DualNum operator "" _dn(unsigned long long x) {
+  return DualNum(static_cast<double>(x));
+}
+
 // Adding two expressions does not force evaluation of the expressions. This is
 // the key element of the expression template abstraction.
-
-#if USE_CONSTEXPR
-// This is an attempt to reduce the amount of boilerplate needed for this
-// pattern. Unfortunately, the rules for the lifetimes of temporary objects
-// make an expression like:
-//      5. + x0 + x1
-// introduce undefined behavior. The result compiles but yields erroneous results.
-
-template <typename LHS, typename RHS>
-auto
-operator+(LHS const& lhs, RHS const& rhs)
-{
-  if constexpr (std::is_arithmetic_v<LHS>) {
-    return DualNumSum<DualNum, RHS>(DualNum(lhs), rhs);
-  } else if constexpr (std::is_arithmetic_v<RHS>) {
-    return DualNumSum<LHS, DualNum>(lhs, DualNum(rhs));
-  } else {
-    return DualNumSum<LHS, RHS>(lhs, rhs);
-  }
-  // No return because we're already done.
-}
-#endif
-
-#if 0
-template <typename RHS>
-DualNumSum<DualNum, RHS>
-operator+(double lhs,  RHS const& rhs)
-{
-  return DualNumSum<DualNum, RHS>(DualNum(lhs), rhs);
-}
-
-template <typename LHS>
-DualNumSum<LHS, DualNum>
-operator+(LHS const& lhs, double rhs)
-{
-  return DualNumSum<LHS, DualNum>(lhs, DualNum(rhs));
-}
-#endif
 
 template <typename LHS, typename RHS>
 DualNumSum<LHS, RHS>
@@ -171,4 +145,12 @@ main()
   DualNum z;
   z = x0 * x1 * x2 * x3;
   printf("outputs:  %f   %f\n", z(0), z(1));
+
+  DualNum z2;
+  z2 = 1.0_dn + x0 * x1 * x2 * x3;
+  printf("outputs:  %f   %f\n", z2(0), z2(1));
+  
+  DualNum z3;
+  z3 = 1_dn + x0 * x1 * x2 * x3;
+  printf("outputs:  %f   %f\n", z3(0), z3(1));
 }
