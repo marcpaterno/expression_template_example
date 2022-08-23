@@ -1,8 +1,6 @@
 CXXFLAGS=-O3 -std=c++17 -Wall -Wextra
 
 # overload3 is not included in the 'all' target because it does not compile.
-# It is an example of one failed attempt to allow an intitial floating-point
-# literal in an expression of DualNums.
 # To try to build it, use:
 #     make overload3
 
