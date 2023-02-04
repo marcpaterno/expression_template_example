@@ -14,5 +14,5 @@ overload: overload.cpp
 overload2: overload2.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-overload3: overload3.cpp
+overload3: overload3.cpp dual_num3.hpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
