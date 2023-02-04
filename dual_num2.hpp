@@ -137,4 +137,9 @@ operator*(LHS const& lhs, RHS const& rhs)
   return DualNumProduct<LHS, RHS>(lhs, rhs);
 }
 
+inline DualNum operator+(DualNum const& x, double y)
+{
+  return x + DualNum(y);
+}
+
 #endif
