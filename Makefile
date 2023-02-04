@@ -1,4 +1,4 @@
-CXX=g++-12
+#CXX=g++-12
 CXXFLAGS=-O3 -std=c++17 -Wall -Wextra
 
 .PHONY: test
@@ -6,7 +6,7 @@ CXXFLAGS=-O3 -std=c++17 -Wall -Wextra
 all: overload overload2
 
 clean:
-	rm -f overload overload2
+	rm -f overload overload2 main.o
 
 overload: overload.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
