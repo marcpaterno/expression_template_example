@@ -30,6 +30,31 @@ private:
   RHS const& rhs;
 };
 
+// expression template version of subtraction for DualNum uses the type
+// DualNumDiff to represent the unevaluated subtraction.
+template <typename LHS, typename RHS>
+class DualNumDiff {
+public:
+  using value_type = typename LHS::value_type;
+
+  DualNumDiff(LHS const& lhs, RHS const& rhs) : lhs(lhs), rhs(rhs) {}
+
+  // conversion of i'th element to the resulting difference of the i'th
+  // elements of the represented expression.
+  value_type
+  operator()(std::size_t i) const
+  {
+    return lhs(i) - rhs(i);
+  }
+
+private:
+  // We contain reference to avoid copying. This is acceptable because the
+  // lifetime of an expression object is always, by construction, long enough to
+  // let it be evaluated.
+  LHS const& lhs;
+  RHS const& rhs;
+};
+
 // expression template version of multiplication for DualNum uses the type
 // DualNumProduct to represent the unevaluated multiplication.
 
@@ -58,7 +83,7 @@ private:
 
 struct DualNum {
   // We need a nested type value_type, so that DualNum can be used
-  // withh the DualNumSum template.
+  // with the DualNumSum template.
   using value_type = double;
 
   // We store our data in a fixed-size array so that we can access them
@@ -108,6 +133,13 @@ struct DualNum {
   }
 };
 
+// Equality testing for DualNum checks the components.
+inline bool
+operator==(DualNum const& x, DualNum const& y)
+{
+  return (x(0) == y(0)) && (x(1) == y(1));
+}
+
 // We support the suffix _dn on a floating-point literal, or an integer literal,
 // to create a DualNum.
 inline DualNum operator"" _dn(long double x)
@@ -131,15 +163,83 @@ operator+(LHS const& lhs, RHS const& rhs)
 }
 
 template <typename LHS, typename RHS>
+DualNumDiff<LHS, RHS>
+operator-(LHS const& lhs, RHS const& rhs)
+{
+  return DualNumDiff<LHS, RHS>(lhs, rhs);
+}
+
+template <typename LHS, typename RHS>
 DualNumProduct<LHS, RHS>
 operator*(LHS const& lhs, RHS const& rhs)
 {
   return DualNumProduct<LHS, RHS>(lhs, rhs);
 }
 
-inline DualNum operator+(DualNum const& x, double y)
+inline DualNum
+operator+(DualNum const& x, double y)
 {
   return x + DualNum(y);
+}
+
+inline DualNum
+operator+(double x, DualNum const& y)
+{
+  return DualNum(x) + y;
+}
+
+inline DualNum
+operator-(DualNum const& x, double y)
+{
+  return x - DualNum(y);
+}
+
+inline DualNum
+operator-(double x, DualNum const& y)
+{
+  return DualNum(x) - y;
+}
+
+inline DualNum
+operator*(DualNum const& x, double y)
+{
+  return x * DualNum(y);
+}
+
+inline DualNum
+operator*(double x, DualNum const& y)
+{
+  return DualNum(x) * y;
+}
+
+template <typename EXPR>
+auto
+operator+(EXPR const& x, double y)
+{
+  // We can not use the simple form:
+  // return x + DualNum(y);
+  // because this uses a dangling pointer to an unnamed temporary.
+  //
+  // This implementation forces the evaluation of x, the left hand side of the
+  // expression using the double. This may lead to inefficiency.
+  DualNum temp{x};
+  return temp + y;
+}
+
+template <typename EXPR>
+auto
+operator-(EXPR const& x, double y)
+{
+  DualNum temp{x};
+  return temp - y;
+}
+
+template <typename EXPR>
+auto
+operator*(EXPR const& x, double y)
+{
+  DualNum temp{x};
+  return temp * y;
 }
 
 #endif

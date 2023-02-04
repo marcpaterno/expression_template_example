@@ -1,3 +1,6 @@
 overload
 overload2
 .vscode/
+*.dSYM
+*.so
+*.o
