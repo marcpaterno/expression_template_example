@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include "dual_num2.hpp"
+#include "dual_num1.hh"
 #include <array>
 #include <cstdio>
 #include <type_traits>

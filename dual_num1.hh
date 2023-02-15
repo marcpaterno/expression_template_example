@@ -1,5 +1,5 @@
-#ifndef DUAL_NUM_2_HPP
-#define DUAL_NUM_2_HPP
+#ifndef DUAL_NUM_1_HH
+#define DUAL_NUM_1_HH
 
 #include <array>
 #include <cstddef> // for std::size_t
