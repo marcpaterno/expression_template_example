@@ -3,3 +3,4 @@ test_dual_num2
 *.dSYM
 *.so
 *.o
+*.s
