@@ -16,10 +16,11 @@ int
 main()
 {
   ankerl::nanobench::Bench b;
-//   b.title("dual num tests");
-//   b.warmup(10);
-//   b.performanceCounters(true);
-//   b.epochs(10000);
+   b.title("dual num tests");
+   b.warmup(10);
+   b.performanceCounters(true);
+   b.epochs(10000);
   run_bench(&use_mult_3, &b, "expression template use");
   run_bench(&fake_mult_3, &b, "by-hand expansion");
 }
+
