@@ -5,3 +5,4 @@ test_dual_num5
 *.so
 *.o
 *.s
+build*/

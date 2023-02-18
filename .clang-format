@@ -7,17 +7,17 @@ Language:        Cpp
 # BasedOnStyle:  Mozilla
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
 AlignEscapedNewlines: Right
 AlignOperands:   true
 AlignTrailingComments: true
 AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: All
 AlwaysBreakAfterReturnType: AllDefinitions
 AlwaysBreakBeforeMultilineStrings: false

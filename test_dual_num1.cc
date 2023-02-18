@@ -108,7 +108,7 @@ TEST_CASE("mixed expression with DualNums")
 
     // This is the expression evaluation broken down
     // into pieces.
-    DualNum t1 = w * x;
+    DualNum t1   = w * x;
     DualNum expr = t1 + y;
     CHECK(z == expr);
   }
@@ -120,7 +120,7 @@ TEST_CASE("mixed expression with DualNums")
 
     // This is the expression evaluation broken down
     // into pieces.
-    DualNum t2 = x * y;
+    DualNum t2   = x * y;
     DualNum expr = w + t2;
     CHECK(z == expr);
   }
@@ -131,7 +131,7 @@ TEST_CASE("mixed expression with DualNums")
     DualNum z = (w + x) * y;
 
     // This is the expression evaluation broken down into pieces.
-    DualNum t1 = w + x;
+    DualNum t1   = w + x;
     DualNum expr = t1 * y;
     CHECK(z == expr);
   }
@@ -173,7 +173,7 @@ TEST_CASE("multiplication expressions with bare doubles")
   {
     DualNum z = x * y * 3.0;
 
-    DualNum t1 = x * y;
+    DualNum t1       = x * y;
     DualNum expected = t1 * DualNum(3.0);
     CHECK(z == expected);
   }
@@ -182,7 +182,7 @@ TEST_CASE("multiplication expressions with bare doubles")
   {
     DualNum z = x * 3.0 * y;
 
-    DualNum t1 = x * 3.0;
+    DualNum t1       = x * 3.0;
     DualNum expected = t1 * y;
     CHECK(z == expected);
   }
@@ -191,7 +191,7 @@ TEST_CASE("multiplication expressions with bare doubles")
   {
     DualNum z = 3.0 * x * y;
 
-    DualNum t1 = 3.0 * x;
+    DualNum t1       = 3.0 * x;
     DualNum expected = t1 * y;
     CHECK(z == expected);
   }

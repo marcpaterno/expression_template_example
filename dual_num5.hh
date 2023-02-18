@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef> // for std::size_t
+// #include <ostream>
 
 // expression template version of addition for DualNum uses the type
 // DualNumSum to represent the unevaluated addition.
@@ -48,7 +49,7 @@ public:
   }
 
 private:
-  // We contain reference to avoid copying. This is acceptable because the
+  // We contain references to avoid copying. This is acceptable because the
   // lifetime of an expression object is always, by construction, long enough to
   // let it be evaluated.
   LHS const& lhs;
@@ -65,22 +66,17 @@ public:
 
   DualNumProduct5(LHS const& lhs, RHS const& rhs) : lhs(lhs), rhs(rhs) {}
 
-  // conversion of i'th element to the resulting sum of the i'th elements
-  // of the represented expression.
   value_type
   operator()(std::size_t i) const
   {
     switch (i) {
-      case 0:
-        return lhs(0) * rhs(0);
-      case 1:
-        return lhs(0) * rhs(1) + rhs(0) * lhs(1);
-      case 2:
-        return lhs(0) * rhs(2) + rhs(0) * lhs(2);
-      case 3:
-        return lhs(0) * rhs(3) + rhs(0) * lhs(3);
+      case 0: return lhs(0) * rhs(0);
+      case 1: return lhs(0) * rhs(1) + rhs(0) * lhs(1);
+      case 2: return lhs(0) * rhs(2) + rhs(0) * lhs(2);
+      case 3: return lhs(0) * rhs(3) + rhs(0) * lhs(3);
+      case 4: return lhs(0) * rhs(4) + rhs(0) * lhs(4);
     }
-    return lhs(0) * rhs(4) + rhs(0) * lhs(4);
+    return lhs(0) * rhs(5) + rhs(0) * lhs(5);
   }
 
 private:
@@ -98,13 +94,13 @@ struct DualNum5 {
 
   // We store our data in a fixed-size array so that we can access them
   // generically in the operators.
-  std::array<value_type, 5> vals;
+  std::array<value_type, 6> vals;
 
   // Serves as default constructor, as well as 1- and 2-arg constructors.
-  DualNum5() : vals{0.0, 0.0, 0.0, 0.0, 0.0} {}
-  DualNum5(double real) : vals{real, 0.0, 0.0, 0.0, 0.0} {}
-  DualNum5(double real, double d1, double d2, double d3, double d4)
-    : vals{real, d1, d2, d3, d4}
+  DualNum5() : vals{0.0, 0.0, 0.0, 0.0, 0.0, 0.0} {}
+  DualNum5(double real) : vals{real, 0.0, 0.0, 0.0, 0.0, 0.0} {}
+  DualNum5(double real, double d1, double d2, double d3, double d4, double d5)
+    : vals{real, d1, d2, d3, d4, d5}
   {}
 
   // This constructor template is required to allow creating a DualNum from an
@@ -118,7 +114,8 @@ struct DualNum5 {
   // Creating a DualNum from an expression forces the evaluation of the
   // expression.
   template <typename E>
-  DualNum5(E const& expr) : vals{expr(0), expr(1), expr(2), expr(3), expr(4)}
+  DualNum5(E const& expr)
+    : vals{expr(0), expr(1), expr(2), expr(3), expr(4), expr(5)}
   {}
 
   // Note that DualNumSum has the same operator (only the const version).
@@ -146,16 +143,26 @@ struct DualNum5 {
     vals[2] = expr(2);
     vals[3] = expr(3);
     vals[4] = expr(4);
+    vals[5] = expr(5);
     return *this;
   }
 };
+
+// inline
+// std::ostream&
+// operator<<(std::ostream& os, DualNum5 const& x)
+// {
+//   os << x(0) << ' ' << x(1) << ' ' << x(2) << ' '
+//     << x(3) << ' ' << x(4) << ' ' << x(5) << '\n';
+//   return os;
+// }
 
 // Equality testing for DualNum checks the components.
 inline bool
 operator==(DualNum5 const& x, DualNum5 const& y)
 {
   return (x(0) == y(0)) && (x(1) == y(1)) && (x(2) == y(2)) && (x(3) == y(3)) &&
-         (x(4) == y(4));
+         (x(4) == y(4)) && (x(5) == y(5));
 }
 
 // We support the suffix _dn on a floating-point literal, or an integer literal,
@@ -259,5 +266,7 @@ operator*(EXPR const& x, double y)
   DualNum5 temp{x};
   return temp * y;
 }
+
+void print(DualNum5 const& x);
 
 #endif
