@@ -9,6 +9,7 @@
 //   spelling out the complicated expression template type.
 //   2. This allows the compiler to see the whole expression at the site of use,
 //   thus providing the best opportunities for optimization.
+inline
 auto
 mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 {
@@ -20,4 +21,10 @@ mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 DualNum5 use_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
 DualNum5 fake_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
 
+template <typename... Args>
+auto
+use_mult_n(Args&&... args)
+{
+  return (args * ...);
+}
 #endif

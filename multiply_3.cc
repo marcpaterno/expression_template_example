@@ -1,4 +1,5 @@
 #include "dual_num5.hh"
+#include "multiply_3.hh"
 
 #include <stdio.h>
 
@@ -13,7 +14,8 @@ print(DualNum5 const& x)
 DualNum5
 use_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 {
-  return x * y * z;
+  // return x * y * z;
+  return use_mult_n(x, y, z);
 }
 
 DualNum5
