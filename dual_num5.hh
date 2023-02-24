@@ -11,13 +11,12 @@
 template <typename LHS, typename RHS>
 class DualNumSum5 {
 public:
-  using value_type = typename LHS::value_type;
-
   DualNumSum5(LHS const& lhs, RHS const& rhs) : lhs(lhs), rhs(rhs) {}
 
   // conversion of i'th element to the resulting sum of the i'th elements
-  // of the represented expression.
-  value_type
+  // of the represented expression. We return auto to delay evaluating
+  // the expression for as long as possible.
+  auto
   operator()(std::size_t i) const
   {
     return lhs(i) + rhs(i);
@@ -36,13 +35,12 @@ private:
 template <typename LHS, typename RHS>
 class DualNumDiff5 {
 public:
-  using value_type = typename LHS::value_type;
-
   DualNumDiff5(LHS const& lhs, RHS const& rhs) : lhs(lhs), rhs(rhs) {}
 
   // conversion of i'th element to the resulting difference of the i'th
-  // elements of the represented expression.
-  value_type
+  // elements of the represented expression. We return auto to delay evaluating
+  // the expression for as long as possible.
+  auto
   operator()(std::size_t i) const
   {
     return lhs(i) - rhs(i);
@@ -62,11 +60,14 @@ private:
 template <typename LHS, typename RHS>
 class DualNumProduct5 {
 public:
-  using value_type = typename LHS::value_type;
+  //using value_type = typename LHS::value_type;
 
   DualNumProduct5(LHS const& lhs, RHS const& rhs) : lhs(lhs), rhs(rhs) {}
 
-  value_type
+  // conversion of i'th element to the resulting product of the i'th
+  // elements of the represented expression. We return auto to delay evaluating
+  // the expression for as long as possible.
+  auto
   operator()(std::size_t i) const
   {
     switch (i) {
