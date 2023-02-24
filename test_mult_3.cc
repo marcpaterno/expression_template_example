@@ -12,4 +12,8 @@ TEST_CASE("use_mult_3 and fake_mult_3 do the same thing")
   auto a = use_mult_3(w, x, y);
   auto b = fake_mult_3(w, x, y);
   CHECK(a == b);
+  // auto c = left_fold_mult_3(w, x, y);
+  // CHECK(a == c);
+  auto d = right_fold_mult_3(w, x, y);
+  CHECK(a == d);
 }

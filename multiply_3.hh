@@ -20,11 +20,21 @@ mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 // we can see how well the compiler is optimizing the expression template use.
 DualNum5 use_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
 DualNum5 fake_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
+DualNum5 left_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
+DualNum5 right_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
+
+// template <typename... Args>
+// auto
+// left_fold_mult_n(Args&&... args)
+// {
+//   return (... * args);
+// }
 
 template <typename... Args>
 auto
-use_mult_n(Args&&... args)
+right_fold_mult_n(Args&&... args)
 {
   return (args * ...);
 }
+
 #endif

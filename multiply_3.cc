@@ -14,8 +14,18 @@ print(DualNum5 const& x)
 DualNum5
 use_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 {
-  // return x * y * z;
-  return use_mult_n(x, y, z);
+  return x * (y * z);
+}
+
+// DualNum5
+// left_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
+// {
+//   return left_fold_mult_n(x, y, z);
+// }
+DualNum5
+right_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
+{
+  return right_fold_mult_n(x, y, z);
 }
 
 DualNum5
