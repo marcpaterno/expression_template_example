@@ -27,14 +27,14 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(nanobench)
 
-add_library(dual_num5_stuff multiply_3.cc)
+add_library(dual_num5_stuff OBJECT fake_mult_3.cc long_mult_3.cc only_construct.cc right_fold_mult_3.cc use_mult_3.cc)
 
 add_executable(test_dual_num5 test_dual_num5.cc)
 target_link_libraries(test_dual_num5 PRIVATE Catch2::Catch2WithMain)
 add_test(test_dual_num5 test_dual_num5)
 
 add_executable(test_mult_3 test_mult_3.cc)
-target_link_libraries(test_mult_3 PRIVATE Catch2::Catch2WithMain dual_num5_stuff)
+target_link_libraries(test_mult_3 PRIVATE Catch2::Catch2WithMain dual_num5_stuff -fsanitize=undefined -fsanitize=address)
 add_test(test_mult_3 test_mult_3)
 
 add_executable(benchmark_mult_3 benchmark_mult_3.cc)

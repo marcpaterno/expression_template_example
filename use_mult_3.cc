@@ -1,5 +1,5 @@
-#include "multiply_3.hh"
 #include "dual_num5.hh"
+#include "multiply_3.hh"
 
 DualNum5
 use_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)

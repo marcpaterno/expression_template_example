@@ -70,13 +70,11 @@ public:
   auto
   operator()(std::size_t i) const
   {
-    switch (i) {
-      case 0: return lhs(0) * rhs(0);
-      case 1: return lhs(0) * rhs(1) + rhs(0) * lhs(1);
-      case 2: return lhs(0) * rhs(2) + rhs(0) * lhs(2);
-      case 3: return lhs(0) * rhs(3) + rhs(0) * lhs(3);
-      case 4: return lhs(0) * rhs(4) + rhs(0) * lhs(4);
-    }
+    if (i == 0) return lhs(0) * rhs(0);
+    if (i == 1) return lhs(0) * rhs(1) + rhs(0) * lhs(1);
+    if (i == 2) return lhs(0) * rhs(2) + rhs(0) * lhs(2);
+    if (i == 3) return lhs(0) * rhs(3) + rhs(0) * lhs(3);
+    if (i == 4) return lhs(0) * rhs(4) + rhs(0) * lhs(4);
     return lhs(0) * rhs(5) + rhs(0) * lhs(5);
   }
 

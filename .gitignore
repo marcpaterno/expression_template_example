@@ -6,3 +6,11 @@ test_dual_num5
 *.o
 *.s
 build*/
+.Rproj.user
+.Rhistory
+.idea/
+benchmarking_files/
+build/
+build-*
+*.pdf
+*.html

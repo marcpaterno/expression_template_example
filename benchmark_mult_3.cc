@@ -7,26 +7,37 @@
 #include <chrono>
 #include <thread>
 
-DualNum5
-only_construct(DualNum5 const&, DualNum5 const&, DualNum5 const&)
-{
-  return {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
-}
-
 template <typename F>
 void
 run_bench(F func, ankerl::nanobench::Bench* bench, char const* name)
 {
   ankerl::nanobench::Rng rng(137);
   auto                   gen = [&]() { return rng.uniform01(); };
-  DualNum5 w{gen(), gen(), gen(), gen(), gen(), gen()};
-  DualNum5 x{gen(), gen(), gen(), gen(), gen(), gen()};
-  DualNum5 y{gen(), gen(), gen(), gen(), gen(), gen()};
-  DualNum5 z;
+  DualNum5               w{gen(), gen(), gen(), gen(), gen(), gen()};
+  DualNum5               x{gen(), gen(), gen(), gen(), gen(), gen()};
+  DualNum5               y{gen(), gen(), gen(), gen(), gen(), gen()};
   bench->run(name, [&]() {
-    z = func(w, x, y);
+    DualNum5 z = func(w, x, y);
+    ankerl::nanobench::doNotOptimizeAway(z);
   });
-  ankerl::nanobench::doNotOptimizeAway(z);
+}
+
+void
+run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
+{
+  ankerl::nanobench::Rng rng(137);
+  auto                   gen = [&]() { return rng.uniform01(); };
+  double                 a   = gen();
+  double                 b   = gen();
+  double                 c   = gen();
+  double                 d   = gen();
+  double                 e   = gen();
+  double                 f   = gen();
+  bench->run(name, [&]() {
+    DualNum5 z = only_construct(a, b, c, d, e, f);
+    ankerl::nanobench::doNotOptimizeAway(z);
+  });
+
 }
 
 int
@@ -35,10 +46,11 @@ main()
   ankerl::nanobench::Bench b;
   b.title("dual num tests")
     .performanceCounters(true)
-    .minEpochIterations(55*1000*1000);
+    .minEpochIterations(55 * 1000 * 1000);
   run_bench(&right_fold_mult_3, &b, "right fold");
   run_bench(&use_mult_3, &b, "expression template use");
   run_bench(&fake_mult_3, &b, "by-hand expansion");
+  run_bench(&long_mult_3, &b, "compiler expansion");
   // run_bench(&left_fold_mult_3, &b, "left fold");
-  run_bench(&only_construct, &b, "only construct");
+  run_bench_constructor(&b, "only construct");
 }
