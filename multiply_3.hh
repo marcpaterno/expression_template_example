@@ -27,14 +27,14 @@ DualNum5 right_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const&
 DualNum5 only_construct(double a, double b, double c, double d, double e, double f);
   
 template <typename... Args>
-auto
+DualNum5
 left_fold_mult_n(Args&&... args)
 {
   return (... * args);
 }
 
 template <typename... Args>
-auto
+DualNum5
 right_fold_mult_n(Args&& ... args)
 {
   return (args * ...);
