@@ -96,7 +96,7 @@ build-apple-clang
 |                2.28 |      438,949,879.43 |    0.5% |      1.51 | `expression template use`
 |                3.05 |      327,554,692.60 |    0.6% |      2.01 | `by-hand expansion`
 |                2.29 |      437,047,622.61 |    0.4% |      1.51 | `compiler expansion`
-|                2.06 |      484,356,610.49 |    5.9% |      1.35 | :wavy_dash: `only construct` (Unstable with ~59,698,938.8 iters. Increase `minEpochIterations` to e.g. 596989388)
+|                2.06 |      484,356,610.49 |    5.9% |      1.35 | `only construct`
 build-gcc-10
 
 |               ns/op |                op/s |    err% |     total | dual num tests
@@ -291,7 +291,7 @@ build-gcc-11
 |               ns/op |                op/s |    err% |     total | dual num tests
 |--------------------:|--------------------:|--------:|----------:|:---------------
 |                4.06 |      246,217,208.34 |    0.4% |      2.66 | `right fold`
-|                4.44 |      225,362,806.75 |    6.1% |      2.93 | :wavy_dash: `expression template use` (Unstable with ~59,698,938.8 iters. Increase `minEpochIterations` to e.g. 596989388)
+|                4.44 |      225,362,806.75 |    6.1% |      2.93 | `expression template use`
 |                3.41 |      293,534,785.44 |    1.4% |      2.26 | `by-hand expansion`
 |                3.40 |      293,861,550.38 |    0.9% |      2.23 | `compiler expansion`
 |                2.29 |      436,460,635.27 |    0.9% |      1.50 | `only construct`

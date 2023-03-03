@@ -7,6 +7,8 @@ execute:
 format:
   html:
     number-sections: true
+    margin-left: 100px
+    margin-right: 50px
   pdf:
     number-sections: true
     pdf-engine: xelatex
@@ -31,11 +33,13 @@ We used the [nanobench](https://github.com/martinus/nanobench) library to collec
 Our collected data have the following form:
 
 ```{r}
-bm <- read_benchmark_data("timing.txt") |> dplyr::filter(func != "fold")
-knitr::kable(head(bm, 8))
+bm <- read_benchmark_data("timing.txt")
+knitr::kable(head(bm, 10))
 ```
+Each benchmark execution was repeated 10 times in the data shown below.
 
 @fig-each-compiler shows a comparison of the different functions with results grouped by compiler.
+Note that each plot has a different scale on the $x$ axis.
 
 ```{r}
 #| fig-asp: 0.667
@@ -48,11 +52,11 @@ ggplot(bm, aes(time, func)) +
   labs(x="execution time (ns)", y="")
 ```
 
-Compare first the measured speed of the *constructor* call to the other functions.
+We will compare first the measured speed of the *constructor* call to the other functions.
 The code measured by *constructor* is shown in @lst-ctor.
 This is intended to be as similar as possible to the code used in the benchmarking function used for the function we wish to compare.
-@lst-ctor-benchmark show the actual benchmark executed.
-The function launch differs from that used for benchmarking the various multiplication functions in that it takes 6 `double`s by value, rather than 3 `DualNum`s by `const` reference.
+@lst-ctor-benchmark shows the actual benchmark executed.
+The function call differs from that used for benchmarking the various multiplication functions in that it takes 6 `double`s by value, rather than 3 `DualNum`s by `const` reference.
 
 ```{#lst-ctor .cpp lst-cap="The `only_construct` function used in benchmarking."}
 
@@ -77,13 +81,48 @@ run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
   double                 d   = gen();
   double                 e   = gen();
   double                 f   = gen();
-  DualNum5               z;
-  bench->run(name, [&]() { z = only_construct(a, b, c, d, e, f); });
-  ankerl::nanobench::doNotOptimizeAway(z);
+  bench->run(name, [&]() {
+    DualNum5 z = only_construct(a, b, c, d, e, f);
+    ankerl::nanobench::doNotOptimizeAway(z);
+  });
 }
 ```
 
+It appears that GCC 10 does a much worse job than the other compilers of optimizing the construction time.
+Perhaps inspecting the assembly language code will explain why.
+@lst-gcc10-ctor-asm and @list-gcc11-ctor-asm show the assembly language generated for the same C++ source code by GCC 10 and GCC 11, the worst- and best-performing of the GCC implementations.
+The code difference is not large, although the performance difference is quite significant.
 
+::::{.columns .column-body-outset}
+:::{.column width=50%}
+```{#lst-gcc10-ctor-assm .asm lst-cap="Optimized assembly code output from GCC 10 for the `only_construct` function."}
+vunpcklpd       %xmm3, %xmm2, %xmm2
+vunpcklpd       %xmm1, %xmm0, %xmm1
+movq    %rdi, %rax
+vinsertf128     $0x1, %xmm2, %ymm1, %ymm0
+vmovupd %ymm0, (%rdi)
+vmovsd  %xmm4, 32(%rdi)
+vmovsd  %xmm5, 40(%rdi)
+vzeroupper
+ret
+```
+:::
+::: {.column width=50%}
+```{#lst-gcc11-ctor-assm .asm lst-cap="Optimized assembly code output from GCC 11 for the `only_construct` function."}
+vunpcklpd       %xmm3, %xmm2, %xmm2
+vunpcklpd       %xmm1, %xmm0, %xmm1
+movq    %rdi, %rax
+vinsertf128     $0x1, %xmm2, %ymm1, %ymm0
+vunpcklpd       %xmm5, %xmm4, %xmm4
+vmovupd %ymm0, (%rdi)
+vmovupd %xmm4, 32(%rdi)
+vzeroupper
+ret
+```
+:::
+::::
+
+Next we look at the same data organized to allow easy comparison for each function across the different compilers.
 
 ```{r}
 #| fig-asp: 0.333
@@ -95,8 +134,7 @@ ggplot(bm, aes(time, compiler)) +
   facet_wrap(vars(func), nrow = 1, scales = "free_x")
 ```
 
-It appears that GCC 11 and 12 do a much better job than the other compilers of optimizing the construction time.
-Perhaps inspecting the assembly language code will explain why.
+
 We can subtract the construction time from both of the other calculations to infer how much time is actually spent in the calculations.
 Since we do not have the time broken down by individual run we calculate means, and subtract them.
 
@@ -105,8 +143,6 @@ means <- make_means(bm)
 ```
 
 I am not yet sure what to make of @fig-scatter.
-For both clang compilers, the *template* time is shorter than the *constructor* time.
-Thus subtracting the construction time from the time of the other functions sometimes yields nonsensical results.
 
 ```{r}
 #| out-width: "100%"
