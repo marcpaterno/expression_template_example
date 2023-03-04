@@ -90,12 +90,12 @@ run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
 
 It appears that GCC 10 does a much worse job than the other compilers of optimizing the construction time.
 Perhaps inspecting the assembly language code will explain why.
-@lst-gcc10-ctor-asm and @list-gcc11-ctor-asm show the assembly language generated for the same C++ source code by GCC 10 and GCC 11, the worst- and best-performing of the GCC implementations.
+@lst-gcc10-ctor-asm and @lst-gcc11-ctor-asm show the assembly language generated for the same C++ source code by GCC 10 and GCC 11, the worst- and best-performing of the GCC implementations.
 The code difference is not large, although the performance difference is quite significant.
 
 ::::{.columns .column-body-outset}
 :::{.column width=50%}
-```{#lst-gcc10-ctor-assm .asm lst-cap="Optimized assembly code output from GCC 10 for the `only_construct` function."}
+```{#lst-gcc10-ctor-asm .asm lst-cap="Optimized assembly code output from GCC 10 for the `only_construct` function."}
 vunpcklpd       %xmm3, %xmm2, %xmm2
 vunpcklpd       %xmm1, %xmm0, %xmm1
 movq    %rdi, %rax
@@ -108,7 +108,7 @@ ret
 ```
 :::
 ::: {.column width=50%}
-```{#lst-gcc11-ctor-assm .asm lst-cap="Optimized assembly code output from GCC 11 for the `only_construct` function."}
+```{#lst-gcc11-ctor-asm .asm lst-cap="Optimized assembly code output from GCC 11 for the `only_construct` function."}
 vunpcklpd       %xmm3, %xmm2, %xmm2
 vunpcklpd       %xmm1, %xmm0, %xmm1
 movq    %rdi, %rax
@@ -121,6 +121,49 @@ ret
 ```
 :::
 ::::
+
+It is possible that the speed difference betwen the benchmarks above is due to the context in which the `only_construct` function is called.
+However, inspection of the assembler output for the `run_b
+To determine this we can look at the assembler output for the `run_bench_constructor` calls.
+The full code is large, so we concentrate on the portion of the code that is actually timed.
+@lst-gcc-ctor-bm-asm shows the assembly language generated for the same C++ source code by GCC 10 and GCC 11.
+
+
+```{#lst-gcc-ctor-bm-asm .asm lst-cap="Optimized assembly code output from GCC 10 and GCC 11 for the `run_benchmark_constructor` function."}
+	call	ankerl::nanobench::detail::PerformanceCounters::beginMeasure()
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%rax, %r14
+	decq	%rbp
+	.p2align 4,,10
+	.p2align 3
+L17:
+	movq	32(%rbx), %rdi
+	movq	40(%rbx), %r8
+	movq	24(%rbx), %rsi
+	movq	16(%rbx), %rcx
+	movq	8(%rbx), %rdx
+	movq	(%rbx), %rax
+	vmovsd	(%rdi), %xmm4
+	vmovsd	(%r8), %xmm5
+	vmovsd	(%rsi), %xmm3
+	vmovsd	(%rcx), %xmm2
+	vmovsd	(%rdx), %xmm1
+	vmovsd	(%rax), %xmm0
+	movq	%r12, %rdi
+	call	only_construct(double, double, double, double, double, double)
+	vmovdqu	32(%rsp), %xmm6
+	vmovdqu	48(%rsp), %xmm7
+	vmovdqu	64(%rsp), %xmm0
+	vmovdqu	%xmm6, 80(%rsp)
+	vmovdqu	%xmm7, 96(%rsp)
+	vmovdqu	%xmm0, 112(%rsp)
+	subq	$1, %rbp
+	jnb	L17
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%r13, %rdi
+	movq	%rax, %rbp
+	call	ankerl::nanobench::detail::PerformanceCounters::endMeasure()
+```
 
 Next we look at the same data organized to allow easy comparison for each function across the different compilers.
 
