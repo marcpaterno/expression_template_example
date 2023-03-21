@@ -1,0 +1,33 @@
+	call	ankerl::nanobench::detail::PerformanceCounters::beginMeasure()
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%rax, %r14
+	decq	%rbp
+	.p2align 4,,10
+	.p2align 3
+L17:
+	movq	40(%rbx), %rdi
+	movq	32(%rbx), %rsi
+	movq	24(%rbx), %rcx
+	movq	16(%rbx), %rdx
+	movq	8(%rbx), %rax
+	movq	(%rbx), %r8
+	vmovsd	(%rdi), %xmm5
+	vmovsd	(%r8), %xmm0
+	vmovsd	(%rsi), %xmm4
+	vmovsd	(%rcx), %xmm3
+	vmovsd	(%rdx), %xmm2
+	vmovsd	(%rax), %xmm1
+	movq	%r12, %rdi
+	call	only_construct(double, double, double, double, double, double)
+	vmovdqa	32(%rsp), %xmm6
+	vmovdqa	48(%rsp), %xmm7
+	vmovdqa	64(%rsp), %xmm1
+	vmovdqa	%xmm6, 80(%rsp)
+	vmovdqa	%xmm7, 96(%rsp)
+	vmovdqa	%xmm1, 112(%rsp)
+	subq	$1, %rbp
+	jnb	L17
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%r13, %rdi
+	movq	%rax, %rbp
+	call	ankerl::nanobench::detail::PerformanceCounters::endMeasure()
