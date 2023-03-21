@@ -4,6 +4,7 @@ author: Marc Paterno
 date: last-modified
 execute: 
   echo: false
+  cache: true
 format:
   html:
     number-sections: true
@@ -17,6 +18,8 @@ format:
 ```{r}
 #| include: false
 library(ggplot2)
+library(ggridges)
+library(ggbeeswarm)
 source("functions.R")
 ```
 
@@ -25,18 +28,27 @@ source("functions.R")
 This document explores the code generation and performance of expression templates in the context of [*dual numbers*](https://en.wikipedia.org/wiki/Dual_number).
 In particular, we are concerned with artithmetic operations on dual numbers that occur in the field of automatic differentiation.
 
+The major open questions are:
+
+1. Can we *define* the time taken to "do the math" separately from the time taken to "return the value"?
+1. Can we *instrument the code* to measure this time?
+1. Is there some *other* tool we can use to measure this time?
+
 ## Benchmarking results
 
-We have collected performance data on an MacBook Pro laptop with ann Intel i9 core chip.
+We have collected performance data on an MacBook Pro laptop running macOS Monterey 12.6.3 on an Intel i9 core chip.
 We used the [nanobench](https://github.com/martinus/nanobench) library to collect performance information.
 
 Our collected data have the following form:
 
 ```{r}
 bm <- read_benchmark_data("timing.txt")
-knitr::kable(head(bm, 10))
+bm |>
+  dplyr::select(time, fracerr, func, compiler) |>
+  head(10) |>
+  knitr::kable()
 ```
-Each benchmark execution was repeated 10 times in the data shown below.
+Each benchmark execution was repeated 25 times in the data shown below.
 
 @fig-each-compiler shows a comparison of the different functions with results grouped by compiler.
 Note that each plot has a different scale on the $x$ axis.
@@ -52,6 +64,19 @@ ggplot(bm, aes(time, func)) +
   labs(x="execution time (ns)", y="")
 ```
 
+We are interested in comparing the speed of the calculation done with expression templates to that done by explicit implementation of the equivalent expressions.
+We have chosen the multiplication of 3 dual numbers of dimension 5 as our case for analysis.
+This product can be done with 9 multiplications and 10 fused multiply/add functions.
+We are looking to observe how well the expression template technique is supported by different compilers by comparing the relative performance of different implementations on each of several compilers.
+
+We have 4 implementations of the multiplication to compare.
+The *naive* and *handopt* implementations are functions which calculate the terms of the product explicitly.
+The *naive* version does not have the common subexpressions factored out, relying instead upon the compiler to do so.
+The *handopt* version has the common subexpressions explicitly factored out.
+The *template* and *fold* functions both use the `DualNumProduct` expression template class.
+The interface for all of these functions are identical: they each take 3 `DualNum5` objects by `const` reference and return a `DualNum5` object by value.
+The *constructor* function is unique: we use it to measure the overhead of constructing the `DualNum5` object that is returned by each of the other functions.
+
 ### Focus on the construction
 
 C++ provides for guaranteed copy elision for some [value categories](https://en.cppreference.com/w/cpp/language/value_category).
@@ -59,36 +84,14 @@ In particular: if a function returns a non-reference type and a unique object co
 Under these circumstancees returning an object by value is as efficient, and sometimes more efficient (because the compiler can verify that reference aliasing is not taking place) than return by reference through an "out parameter".
 
 @fig-each-compiler indicates that the functions we are benchmarking are all, in an absolute sense, fast; none takes more than a few nanoseconds.
-The execution time of the functions labeled `constructor` in @fig-each-compiler is, for each compiler, shorter than the time taken by any of the other functions.
+The execution time of the functions labeled `constructor` is, for each compiler, shorter than the time taken by any of the other functions.
 We intend this time to be an estimate of the time taken to construct and return the `DualNum5` object; given the guaranteed copy elision, this means the time taken to set the state of the memory in the caller to reflect the correct value of the product of the three `DualNum5` objects calculated by the functions we are profiling.
 To infer the time taken by the calculation of the return value, as opposed to the time taken by setting the state of the return value, we propose to subtract the time taken by the `only_construct` function from the time taken by the various multiplication functions.
 Before we trust that this is appropriate we will look in some detail at the `only_construct` function, to make sure we understand the behavior and performance we are observing.
 
 @lst-ctor shows the C++ code of the `only_construct` function.
-@fig-only-construct shows the timing data observed for 10 runs each of this function.
+@fig-only-construct and @fig-only-construct-fast show the timing data observed for 25 runs each of this function.
 
-```{r}
-#| fig-asp: 0.5
-#| out-width: 100%
-#| fig-cap: "Comparison of the `only_construct` function timing for all compilers."
-#| label: fig-only-construct
-dplyr::filter(bm, func == "constructor") |>
-  ggplot(aes(time, reorder(compiler, time))) +
-  geom_boxplot() +
-  scale_x_log10() +
-  labs(x = "execution time (ns)", y = "compiler")
-```
-
-Each compiler produces quite reproducible results.
-The two clang compilers produce statistically indistinguishable results.
-GCC 11 and 12 also produce statistically indistinguishable results, but those results are slightly, but measurably, slower than the two clang compilers.
-The most striking feature is how much slower is the code generated by GCC 10 than the code generated by the other compilers.
-
-We will compare first the measured speed of the *constructor* call to the other functions.
-The code measured by *constructor* is shown in @lst-ctor.
-This is intended to be as similar as possible to the code used in the benchmarking function used for the function we wish to compare.
-@lst-ctor-benchmark shows the actual benchmark executed.
-The function call differs from that used for benchmarking the various multiplication functions in that it takes 6 `double`s by value, rather than 3 `DualNum`s by `const` reference.
 
 ```{#lst-ctor .cpp lst-cap="The `only_construct` function used in benchmarking."}
 
@@ -100,30 +103,54 @@ only_construct(double a, double b, double c, double d, double e, double f)
 }
 ```
 
-
-```{#lst-ctor-benchmark .cpp lst-cap="Benchmark function for timing the `DualNum5` constructor."}
-void
-run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
-{
-  ankerl::nanobench::Rng rng(137);
-  auto                   gen = [&]() { return rng.uniform01(); };
-  double                 a   = gen();
-  double                 b   = gen();
-  double                 c   = gen();
-  double                 d   = gen();
-  double                 e   = gen();
-  double                 f   = gen();
-  bench->run(name, [&]() {
-    DualNum5 z = only_construct(a, b, c, d, e, f);
-    ankerl::nanobench::doNotOptimizeAway(z);
-  });
-}
+::::{.columns .column-body-outset}
+:::{.column width=50%}
+```{r}
+#| fig-asp: 0.5
+#| out-width: 100%
+#| fig-cap: "Comparison of the `only_construct` function timing for all compilers."
+#| label: fig-only-construct
+dplyr::filter(bm, func == "constructor") |>
+  ggplot(aes(time, reorder(compiler, time))) +
+  geom_boxplot() +
+  #geom_density_ridges(bandwidth = 0.02, scale = 0.8) +
+  labs(x = "execution time (ns)", y = "compiler")
 ```
+:::
+:::{.column width=50%}
+```{r}
+#| fig-asp: 0.5
+#| out-width: 100%
+#| fig-cap: "Comparison of the `only_construct` function timing excluding GCC 10."
+#| label: fig-only-construct-fast
+dplyr::filter(bm, func == "constructor", compiler != "gcc-10") |>
+  ggplot(aes(time, reorder(compiler, time))) +
+  geom_boxplot() +
+  #geom_beeswarm(alpha=0.2) +
+  #geom_density_ridges(bandwidth = 0.01, scale = 0.8) +
+  labs(x = "execution time (ns)", y = "compiler")
+```
+:::
+::::
+
+Each compiler produces quite reproducible results.
+The two clang compilers produce statistically indistinguishable results.
+GCC 11 and 12 also produce nearly statistically indistinguishable results, but those results are slightly, but measurably, slower than the two clang compilers.
+The most striking feature is how much slower is the code generated by GCC 10 than the code generated by the other compilers.
+
+We will compare first the measured speed of the *constructor* call to the other functions.
+The code measured by *constructor* is shown in @lst-ctor.
+This is intended to be as similar as possible to the code used in the benchmarking function used for the function we wish to compare.
+@lst-ctor-benchmark shows the actual benchmark executed.
+The function call differs from that used for benchmarking the various multiplication functions in that it takes 6 `double`s by value, rather than 3 `DualNum`s by `const` reference.
+
+
 
 It appears that GCC 10 does a much worse job than the other compilers of optimizing the construction time.
 Perhaps inspecting the assembly language code will explain why.
-@lst-gcc10-ctor-asm and @lst-gcc11-ctor-asm show the assembly language generated for the same C++ source code by GCC 10 and GCC 11, the worst- and best-performing of the GCC implementations.
-The code difference is not large, although the performance difference is quite significant.
+@lst-gcc10-ctor-asm, @lst-gcc11-ctor-asm, and @lst-gcc12-ctor-asm show the assembly language generated for the same C++ source code by GCC 10, GCC 11, and GCC 12 compilers.
+@lst-clang-ctor-asm shows the code generated by both the Apple clang and LLVM clang-15 compilers.
+The code difference between the GCC compilers is not large, although the performance difference between GCC 10 and both GCC 11 and 12 is quite significant.
 
 ::::{.columns .column-body-outset}
 :::{.column width=50%}
@@ -154,13 +181,69 @@ ret
 :::
 ::::
 
+::::{.columns .column-body-outset}
+:::{.column width=50%}
+```{#lst-gcc-12-ctor-asm .asm lst-cap="Optimized assembly code output from GCC 12 for the `only_construct` function."}
+vunpcklpd	%xmm3, %xmm2, %xmm2
+vunpcklpd	%xmm1, %xmm0, %xmm1
+vinsertf128	$0x1, %xmm2, %ymm1, %ymm0
+vunpcklpd	%xmm5, %xmm4, %xmm4
+vmovupd	%ymm0, (%rdi)
+vmovupd	%xmm4, 32(%rdi)
+movq	%rdi, %rax
+vzeroupper
+ret
+```
+:::
+:::{.column width=50%}
+```{#lst-clang-ctor-asm .asm lst-cap="Optimized assembly code output from the clang compilers for the `only_construct` function."}
+pushq	%rbp
+.cfi_def_cfa_offset 16
+.cfi_offset %rbp, -16
+movq	%rsp, %rbp
+.cfi_def_cfa_register %rbp
+movq	%rdi, %rax
+vmovsd	%xmm0, (%rdi)
+vmovsd	%xmm1, 8(%rdi)
+vmovsd	%xmm2, 16(%rdi)
+vmovsd	%xmm3, 24(%rdi)
+vmovsd	%xmm4, 32(%rdi)
+vmovsd	%xmm5, 40(%rdi)
+popq	%rbp
+retq
+```
+:::
+::::
+
 It is possible that the speed difference betwen the benchmarks above is due to the context in which the `only_construct` function is called.
+@lst-ctor-benchmark shows the C++ source code for this function, called `run_bench_constructor`.
 To determine this we can look at the assembler output for the `run_bench_constructor` calls.
 The full code is large, so we concentrate on the portion of the code that is actually timed.
-@lst-gcc-ctor-bm-asm shows the assembly language generated for the same C++ source code by GCC 10 and GCC 11; @
+@lst-gcc-10-ctor-bm-asm, @lst-gcc-11-ctor-bm-asm, and @lst-gcc-12-ctor-bm-asm show the assembly language generated for the same C++ source code by GCC 10, 11, and 12.
+The major difference between the output of GCC 10 and that of both GCC 11 and 12 is the use of the unaligned `vmovdqu` rather than the aligned `vmovdqa`.
+It seems possible that this used of unaligned memory might explain the relatively poor performance of the code generated by GCC 10.
+The difference between the GCC 11 and 12 output seems to be some reordering of the register use; this seems to have little performance impact.
 
+```{#lst-ctor-benchmark .cpp lst-cap="Benchmark function for timing the `DualNum5` constructor."}
+void
+run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
+{
+  ankerl::nanobench::Rng rng(137);
+  auto                   gen = [&]() { return rng.uniform01(); };
+  double                 a   = gen();
+  double                 b   = gen();
+  double                 c   = gen();
+  double                 d   = gen();
+  double                 e   = gen();
+  double                 f   = gen();
+  bench->run(name, [&]() {
+    DualNum5 z = only_construct(a, b, c, d, e, f);
+    ankerl::nanobench::doNotOptimizeAway(z);
+  });
+}
+```
 
-```{#lst-gcc-ctor-bm-asm .asm lst-cap="Optimized assembly code output from GCC 10 and GCC 11 for the `run_benchmark_constructor` function."}
+```{#lst-gcc-10-ctor-bm-asm .asm lst-cap="Optimized assembly code output from GCC 10 for the `run_benchmark_constructor` function."}
 	call	ankerl::nanobench::detail::PerformanceCounters::beginMeasure()
 	call	std::chrono::_V2::steady_clock::now()
 	movq	%rax, %r14
@@ -195,6 +278,83 @@ L17:
 	movq	%rax, %rbp
 	call	ankerl::nanobench::detail::PerformanceCounters::endMeasure()
 ```
+
+```{#lst-gcc-11-ctor-bm-asm .asm lst-cap="Optimized assembly code output from GCC 11 for the `run_benchmark_constructor` function."}
+	call	ankerl::nanobench::detail::PerformanceCounters::beginMeasure()
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%rax, %r14
+	decq	%rbp
+	.p2align 4,,10
+	.p2align 3
+L17:
+	movq	32(%rbx), %rdi
+	movq	40(%rbx), %r8
+	movq	24(%rbx), %rsi
+	movq	16(%rbx), %rcx
+	movq	8(%rbx), %rdx
+	movq	(%rbx), %rax
+	vmovsd	(%rdi), %xmm4
+	vmovsd	(%r8), %xmm5
+	vmovsd	(%rsi), %xmm3
+	vmovsd	(%rcx), %xmm2
+	vmovsd	(%rdx), %xmm1
+	vmovsd	(%rax), %xmm0
+	movq	%r12, %rdi
+	call	only_construct(double, double, double, double, double, double)
+	vmovdqa	32(%rsp), %xmm6
+	vmovdqa	48(%rsp), %xmm7
+	vmovdqa	64(%rsp), %xmm0
+	vmovdqa	%xmm6, 80(%rsp)
+	vmovdqa	%xmm7, 96(%rsp)
+	vmovdqa	%xmm0, 112(%rsp)
+	subq	$1, %rbp
+	jnb	L17
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%r13, %rdi
+	movq	%rax, %rbp
+	call	ankerl::nanobench::detail::PerformanceCounters::endMeasure()
+```
+
+```{#lst-gcc-12-ctor-bm-asm .asm lst-cap="Optimized assembly code output from GCC 12 for the `run_benchmark_constructor` function."}
+	call	ankerl::nanobench::detail::PerformanceCounters::beginMeasure()
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%rax, %r14
+	decq	%rbp
+	.p2align 4,,10
+	.p2align 3
+L17:
+	movq	40(%rbx), %rdi
+	movq	32(%rbx), %rsi
+	movq	24(%rbx), %rcx
+	movq	16(%rbx), %rdx
+	movq	8(%rbx), %rax
+	movq	(%rbx), %r8
+	vmovsd	(%rdi), %xmm5
+	vmovsd	(%r8), %xmm0
+	vmovsd	(%rsi), %xmm4
+	vmovsd	(%rcx), %xmm3
+	vmovsd	(%rdx), %xmm2
+	vmovsd	(%rax), %xmm1
+	movq	%r12, %rdi
+	call	only_construct(double, double, double, double, double, double)
+	vmovdqa	32(%rsp), %xmm6
+	vmovdqa	48(%rsp), %xmm7
+	vmovdqa	64(%rsp), %xmm1
+	vmovdqa	%xmm6, 80(%rsp)
+	vmovdqa	%xmm7, 96(%rsp)
+	vmovdqa	%xmm1, 112(%rsp)
+	subq	$1, %rbp
+	jnb	L17
+	call	std::chrono::_V2::steady_clock::now()
+	movq	%r13, %rdi
+	movq	%rax, %rbp
+	call	ankerl::nanobench::detail::PerformanceCounters::endMeasure()
+```
+
+To summarize: it seems that our benchmark functions allow us to measure the time taken to form the return value of the different functions we wish to measure.
+The instrutions between the calls to `std::chrono::steady_clock::now()`
+
+### Timing of the multiplication routines
 
 Next we look at the same data organized to allow easy comparison for each function across the different compilers.
 
