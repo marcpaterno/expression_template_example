@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_EXTENSIONS Off)
 
-add_compile_options(-Wall -Wextra -Wpedantic -Ofast -march=native -mfma)
+add_compile_options(-Wall -Wextra -Wpedantic -Ofast -march=native -mfma -mpreferred-stack-boundary=4 -funsafe-math-optimizations -ffinite-math-only -fno-signed-zeros -funroll-loops -fverbose-asm -malign-data=cacheline -mprefer-vector-width=128 -momit-leaf-frame-pointer)
 
 Include(FetchContent)
 
@@ -34,7 +34,7 @@ target_link_libraries(test_dual_num5 PRIVATE Catch2::Catch2WithMain)
 add_test(test_dual_num5 test_dual_num5)
 
 add_executable(test_mult_3 test_mult_3.cc)
-target_link_libraries(test_mult_3 PRIVATE Catch2::Catch2WithMain dual_num5_stuff -fsanitize=undefined -fsanitize=address)
+target_link_libraries(test_mult_3 PRIVATE Catch2::Catch2WithMain dual_num5_stuff)
 add_test(test_mult_3 test_mult_3)
 
 add_executable(benchmark_mult_3 benchmark_mult_3.cc)
