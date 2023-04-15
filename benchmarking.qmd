@@ -230,14 +230,9 @@ run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
 {
   ankerl::nanobench::Rng rng(137);
   auto                   gen = [&]() { return rng.uniform01(); };
-  double                 a   = gen();
-  double                 b   = gen();
-  double                 c   = gen();
-  double                 d   = gen();
-  double                 e   = gen();
-  double                 f   = gen();
+  std::array<double, 6> args{gen(), gen(), gen(), gen(), gen(), gen()};
   bench->run(name, [&]() {
-    DualNum5 z = only_construct(a, b, c, d, e, f);
+    DualNum5 z = only_construct(args[0], args[1], args[2], args[3],  args[4], args[5]);
     ankerl::nanobench::doNotOptimizeAway(z);
   });
 }
@@ -247,23 +242,18 @@ run_bench_constructor(ankerl::nanobench::Bench* bench, char const* name)
 	call	ankerl::nanobench::detail::PerformanceCounters::beginMeasure()
 	call	std::chrono::_V2::steady_clock::now()
 	movq	%rax, %r14
-	decq	%rbp
+	decq	%rbx
 	.p2align 4,,10
 	.p2align 3
 L17:
-	movq	32(%rbx), %rdi
-	movq	40(%rbx), %r8
-	movq	24(%rbx), %rsi
-	movq	16(%rbx), %rcx
-	movq	8(%rbx), %rdx
-	movq	(%rbx), %rax
-	vmovsd	(%rdi), %xmm4
-	vmovsd	(%r8), %xmm5
-	vmovsd	(%rsi), %xmm3
-	vmovsd	(%rcx), %xmm2
-	vmovsd	(%rdx), %xmm1
-	vmovsd	(%rax), %xmm0
+	movq	0(%rbp), %rax
 	movq	%r12, %rdi
+	vmovsd	40(%rax), %xmm5
+	vmovsd	32(%rax), %xmm4
+	vmovsd	24(%rax), %xmm3
+	vmovsd	16(%rax), %xmm2
+	vmovsd	8(%rax), %xmm1
+	vmovsd	(%rax), %xmm0
 	call	only_construct(double, double, double, double, double, double)
 	vmovdqu	32(%rsp), %xmm6
 	vmovdqu	48(%rsp), %xmm7
@@ -271,11 +261,11 @@ L17:
 	vmovdqu	%xmm6, 80(%rsp)
 	vmovdqu	%xmm7, 96(%rsp)
 	vmovdqu	%xmm0, 112(%rsp)
-	subq	$1, %rbp
+	subq	$1, %rbx
 	jnb	L17
 	call	std::chrono::_V2::steady_clock::now()
 	movq	%r13, %rdi
-	movq	%rax, %rbp
+	movq	%rax, %rbx
 	call	ankerl::nanobench::detail::PerformanceCounters::endMeasure()
 ```
 

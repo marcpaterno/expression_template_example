@@ -4,7 +4,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_EXTENSIONS Off)
 
-add_compile_options(-Wall -Wextra -Wpedantic -Ofast -march=native -mfma -mpreferred-stack-boundary=4 -funsafe-math-optimizations -ffinite-math-only -fno-signed-zeros -funroll-loops -fverbose-asm -malign-data=cacheline -mprefer-vector-width=128 -momit-leaf-frame-pointer)
+add_compile_options(-Wall -Wextra -Wpedantic -Ofast -march=native -mfma -funsafe-math-optimizations -ffinite-math-only -fno-signed-zeros -funroll-loops -fverbose-asm -mprefer-vector-width=128 -momit-leaf-frame-pointer)
+
+if($CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-mpreferred-stack-boundary=4 -malign-data=cacheline)
+endif()
 
 Include(FetchContent)
 
@@ -27,7 +31,8 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(nanobench)
 
-add_library(dual_num5_stuff OBJECT fake_mult_3.cc long_mult_3.cc only_construct.cc right_fold_mult_3.cc use_mult_3.cc)
+add_library(dual_num5_stuff OBJECT fake_mult_3.cc long_mult_3.cc only_construct.cc right_fold_mult_3.cc use_mult_3.cc run_bench_constructor.cc)
+target_link_libraries(dual_num5_stuff PRIVATE nanobench)
 
 add_executable(test_dual_num5 test_dual_num5.cc)
 target_link_libraries(test_dual_num5 PRIVATE Catch2::Catch2WithMain)
