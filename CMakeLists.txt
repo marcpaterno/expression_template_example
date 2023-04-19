@@ -31,7 +31,7 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(nanobench)
 
-add_library(dual_num5_stuff OBJECT fake_mult_3.cc long_mult_3.cc only_construct.cc right_fold_mult_3.cc use_mult_3.cc run_bench_constructor.cc)
+add_library(dual_num5_stuff OBJECT handopt.cc long_mult_3.cc only_construct.cc right_fold_mult_3.cc use_mult_3.cc run_bench_constructor.cc)
 target_link_libraries(dual_num5_stuff PRIVATE nanobench)
 
 add_executable(test_dual_num5 test_dual_num5.cc)

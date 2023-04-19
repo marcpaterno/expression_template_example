@@ -23,7 +23,7 @@ read_benchmark_data <- function(filename)
   tibbles <- lapply(chunks, make_one_tibble)
   result <- dplyr::bind_rows(tibbles)
   result$func <-
-    dplyr::case_when(result$func == "`by-hand expansion`"       ~ "handopt",
+    dplyr::case_when(result$func == "`handopt`"       ~ "handopt",
                      result$func == "`expression template use`" ~ "template",
                      result$func == "`only construct`"          ~ "constructor",
                      result$func == "`right fold`"              ~ "fold",

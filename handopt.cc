@@ -2,7 +2,7 @@
 #include "multiply_3.hh"
 
 DualNum5
-fake_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
+handopt(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 {
   double t1 = x(0) * y(0);
   double t2 = x(0) * z(0);

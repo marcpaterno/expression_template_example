@@ -17,7 +17,7 @@ DualNum5 w{-2.0, 7.0, 3.0, 4.0, 8.0, 11.0};
 DualNum5 x{1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
 DualNum5 y{2.0, 3.5, 4.0, 5.0, 8.0, 9.0};
 
-DualNum5 expected = fake_mult_3(w, x, y);
+DualNum5 expected = handopt(w, x, y);
 
 TEST_CASE("expression")
 {

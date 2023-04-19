@@ -5,28 +5,47 @@ date: last-modified
 execute: 
   echo: false
   cache: true
+filters:
+  - include-code-files
+number-sections: true
 format:
   html:
-    number-sections: true
+    toc: true
+    theme: [serif]
     margin-left: 100px
     margin-right: 50px
+    code-overflow: wrap
+    reference-location: margin
+    cap-location: margin
+    citation-location: margin
   pdf:
-    number-sections: true
+    papersize: letter
+    geometry:
+      - top=1.5in
+      - left=1.0in
+      - heightrounded
+    documentclass: scrarticle
     pdf-engine: xelatex
+    reference-location: section
+    cap-location: bottom
+    citation-location: bottom
 ---
 
 ```{r}
 #| include: false
 library(ggplot2)
-library(ggridges)
-library(ggbeeswarm)
-source("functions.R")
+library(gt)
 ```
 
 ## Purpose of this document
 
-This document explores the code generation and performance of expression templates in the context of [*dual numbers*](https://en.wikipedia.org/wiki/Dual_number).
+This document explores the code generation and performance of expression templates in the context of *dual numbers*.[^dualnumbers]
 In particular, we are concerned with artithmetic operations on dual numbers that occur in the field of automatic differentiation.
+
+[^dualnumbers]: In algebra, the dual numbers are a hypercomplex number system first introduced in the 19th century.
+They are expressions of the form $a + b \varepsilon$, where $a$ and $b$ are real numbers, and $\varepsilon$ is a symbol taken to satisfy 
+$\varepsilon^2 \neq 0$.
+See [*dual numbers*](https://en.wikipedia.org/wiki/Dual_number).
 
 The major open questions are:
 
@@ -34,19 +53,44 @@ The major open questions are:
 1. Can we *instrument the code* to measure this time?
 1. Is there some *other* tool we can use to measure this time?
 
+## The code
+
+We are comparing four different implementations of the same mathematical task: the multiplication of three `DualNum5` objects.
+We are interested in comparing the speed of the calculation done with expression templates to that done by explicit implementation of the equivalent expressions.
+This product can be done with 9 multiplications and 10 fused multiply/add functions.
+We are looking to observe how well the expression template technique is supported by different compilers by comparing the relative performance of different implementations on each of several compilers.
+
+We have 4 implementations of the multiplication to compare.
+The *naive* and *handopt* implementations are functions which calculate the terms of the product explicitly.
+The *naive* version does not have the common subexpressions factored out, relying instead upon the compiler to do so.
+The *handopt* version has the common subexpressions explicitly factored out.
+The *template* and *fold* functions both use the `DualNumProduct` expression template class.
+The interface for all of these functions are identical: they each take 3 `DualNum5` objects by `const` reference and return a `DualNum5` object by value.
+
+The *constructor* function is unique: we use it to measure the overhead of constructing the `DualNum5` object that is returned by each of the other functions.
+
+```{.cpp include="handopt.cc" start-line=4}
+#| fig-cap: "Source code listing for the `handopt` function."
+#| label: fig-listing-handopt
+```
+
+
 ## Benchmarking results
 
 We have collected performance data on an MacBook Pro laptop running macOS Monterey 12.6.3 on an Intel i9 core chip.
-We used the [nanobench](https://github.com/martinus/nanobench) library to collect performance information.
+We used the *nanobench*[^nanobench] library to collect performance information.
+
+[^nanobench]: [nanobench](https://github.com/martinus/nanobench) is a benchmarking library for modern C++.
 
 Our collected data have the following form:
 
 ```{r}
+#| tbl-cap: "Excerpt of the collected benchmark data, showing the data format. The *time* is the computed mean function execution time in nanoseconds. *fracerr* is the estimated statistical error in the execution time."
+#| label: tbl-sample-data
 bm <- read_benchmark_data("timing.txt")
 bm |>
   dplyr::select(time, fracerr, func, compiler) |>
-  head(10) |>
-  knitr::kable()
+  gt_preview()
 ```
 Each benchmark execution was repeated 25 times in the data shown below.
 
@@ -64,18 +108,6 @@ ggplot(bm, aes(time, func)) +
   labs(x="execution time (ns)", y="")
 ```
 
-We are interested in comparing the speed of the calculation done with expression templates to that done by explicit implementation of the equivalent expressions.
-We have chosen the multiplication of 3 dual numbers of dimension 5 as our case for analysis.
-This product can be done with 9 multiplications and 10 fused multiply/add functions.
-We are looking to observe how well the expression template technique is supported by different compilers by comparing the relative performance of different implementations on each of several compilers.
-
-We have 4 implementations of the multiplication to compare.
-The *naive* and *handopt* implementations are functions which calculate the terms of the product explicitly.
-The *naive* version does not have the common subexpressions factored out, relying instead upon the compiler to do so.
-The *handopt* version has the common subexpressions explicitly factored out.
-The *template* and *fold* functions both use the `DualNumProduct` expression template class.
-The interface for all of these functions are identical: they each take 3 `DualNum5` objects by `const` reference and return a `DualNum5` object by value.
-The *constructor* function is unique: we use it to measure the overhead of constructing the `DualNum5` object that is returned by each of the other functions.
 
 ### Focus on the construction
 

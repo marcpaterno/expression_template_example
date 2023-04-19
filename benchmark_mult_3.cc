@@ -28,7 +28,7 @@ main()
     .minEpochIterations(55 * 1000 * 1000);
   run_bench(&right_fold_mult_3, &b, "right fold");
   run_bench(&use_mult_3, &b, "expression template use");
-  run_bench(&fake_mult_3, &b, "by-hand expansion");
+  run_bench(&handopt, &b, "handopt");
   run_bench(&long_mult_3, &b, "compiler expansion");
   // run_bench(&left_fold_mult_3, &b, "left fold");
   run_bench_constructor(&b, "only construct");

@@ -19,7 +19,7 @@ mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z)
 // This is a non-inline function that uses mult_3 internally. It exists so that
 // we can see how well the compiler is optimizing the expression template use.
 DualNum5 use_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
-DualNum5 fake_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
+DualNum5 handopt(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
 DualNum5 long_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
 DualNum5 left_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
 DualNum5 right_fold_mult_3(DualNum5 const& x, DualNum5 const& y, DualNum5 const& z);
